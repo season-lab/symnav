@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+
+import eel
+import sys
+import angr
+import r2pipe
+import logging
+import models.other_models
+import models.network_models
+import models.internal_functions
+from optparse import OptionParser
+from utility.cfg_loader import compute_cfg
+from angr_wrapper import AngrWrapper
+from utility import util
+import IPython
+
+angr_logger = logging.getLogger("angr")
+angr_logger.setLevel(logging.ERROR)  # shut up
+cle_logger = logging.getLogger("cle")
+cle_logger.setLevel(logging.ERROR)   # shut up
+
+sys.setrecursionlimit(100000)
+
+aw = None
+
+@eel.expose
+def prune_tree(filter_opts, commit):
+    global aw
+    if aw is None: return {}
+
+    res = aw.apply_filters(filter_opts, commit)
+    return res
+
+@eel.expose
+def continue_exploration(filter_opts, cont_data):
+    global aw
+    if aw is None: return {}
+
+    aw.apply_filters(filter_opts, True)
+    aw.run(
+        10000, 
+        time_treshold=int(cont_data["time"]), 
+        mem_treshold=int(cont_data["memory"])
+    )
+
+    # dummy, linearize tree in dict
+    res = aw.apply_filters([])
+    return res
+
+def main(options, args):
+    global aw
+
+    binary = args[0]
+    r2 = r2pipe.open(binary)
+    if r2.cmdj("iIj")["pic"]:
+        base = 0x400000
+    else:
+        base = None
+    compute_cfg(binary, "web/data/json_data/", base)
+
+    p = angr.Project(binary, auto_load_libs=False)
+    util.hook_all_models(p, models.network_models)
+    util.hook_all_models(p, models.other_models)
+    util.hook_all_internal(p, models.internal_functions)
+
+    if options.address:
+        state = p.factory.entry_state(addr=options.address)
+        state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
+        state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
+    else:
+        state = None
+
+    aw = AngrWrapper(p, "web/data/json_data/cfg_atb.json", starting_state=state, concretize_addresses=True)
+    aw.init_run()
+    aw.dump_symbtree("web/data/json_data/symbolic_tree.json")
+    aw.dump_leaves_info("web/data/json_data/leaves.json")
+    aw.dump_symbols("web/data/json_data/symbols.json")
+    aw.dump_coverage_loss("web/data/json_data/coverage_loss.json")
+
+    eel.init('web', allowed_extensions=['.js', '.html'])
+    web_app_options = {
+        'mode': "chrome-app",
+        'port': 8000,
+        'chromeFlags': ["--aggressive-cache-discard"]
+    }
+    eel.start('index.html', suppress_error=True, options=web_app_options) 
+
+    IPython.embed()
+
+if __name__=="__main__":
+    parser = OptionParser(usage='usage: %prog binary [options]')
+    parser.add_option("-a", "--start-address", dest="address", default=None,
+                    help="(optional) start address. If not set, entrypoint")
+
+    (options, args) = parser.parse_args()
+
+    if len(args) != 1:
+        parser.error("no input binary")
+
+    main(options, args)

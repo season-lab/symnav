@@ -1,0 +1,163 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>SymNav</title>
+        <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+        <link rel="stylesheet" type="text/css" href="css/vendor/parcoords.css">
+        <link rel="stylesheet" type="text/css" href="css/vendor/waves.min.css">
+        <link rel="stylesheet" type="text/css" href="css/vendor/jquery.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+    </head>
+    <body class="">
+        <header>
+            <nav>
+                <div class="left">
+                    <div class="title">SymNav</div>
+                </div>
+                <div class="center"></div>
+                <div class="right">
+                    <div class="menu-toggle theme-toggle"><i class="fas fa-paint-brush"></i></div>
+                    <div class="menu-toggle filters-panel-toggle"><i class="fas fa-ellipsis-v"></i></div>
+                </div>
+            </nav>
+        </header>        
+        <main>
+            <div class="left">
+                <div id="tree-container">
+                    <div id="tree-title"></div>
+                    <svg id="tree" xmlns="http://www.w3.org/2000/svg"
+                                   xmlns:xlink="http://www.w3.org/1999/xlink"></svg>
+                    <div id="tree-legend"></div>
+                    <div id="tree-stats"></div>
+                    <svg id="tree-overview"></svg>
+                </div>
+                <div id="paths-container" class="parcoords"></div>
+            </div>
+            <div class="center">
+                <div id="cfg-title"></div>
+                <div id="cfg">
+                    <svg></svg>
+                    <div id="exp-btns">
+                        <button id="cfg-collapse-all"><i class="fas fa-compress"></i></button>
+                        <button id="cfg-expand-all"><i class="fas fa-expand"></i></button>
+                    </div>
+                    <div id="cfg-checkboxes">
+                        <div>
+                            <input type="checkbox" id="path-checkbox" name="path">
+                            <label for="path-checkbox">Path</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="nodes-checkbox" name="node">
+                            <label for="nodes-checkbox">Node</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="subtree-checkbox" name="subtree">
+                            <label for="subtree-checkbox">Subtree</label>
+                        </div>
+                        <br>
+                        <div>
+                            <input type="checkbox" id="call-checkbox" name="callees">
+                            <label for="callees-checkbox">Callees</label>   
+                        </div>
+                        <div>
+                            <input type="checkbox" id="called-checkbox" name="callers">
+                            <label for="callers-checkbox">Callers</label>  
+                        </div>
+                    </div>
+                </div>
+                <div id="cfg-history"></div>
+                <div id="cfg-legend">
+                    <div id="paths-legend">
+                        <div class="title">Edges</div>
+                        <svg class="content"></svg>
+                    </div>
+                    <div id="loops-legend">
+                        <div class="title">Loops</div>
+                        <svg class="content"></svg>
+                    </div>
+                    <div id="other-legend">
+                        <div class="content">
+                            <div> 
+                                <div><i class="fas fa-square" style="color: #4292c6"></i> Forks</div>
+                                <div><i class="fas fa-square" style="color: #238b45"></i> Symbols</div>
+                            </div>
+                            <div> 
+                                <div><i class="fas fa-sync-alt"></i> Callee</div>
+                                <div><i class="fas fa-sign-in-alt"></i> Caller</div>
+                                <div><i class="fas fa-sign-out-alt"></i> Callre</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--
+                    <div id="forks-legend">
+                        <div class="title">Forks</div>
+                        <svg class="content"></svg>
+                    </div>
+                    <div id="symbols-legend">
+                        <div class="title">Symbols</div>
+                        <svg class="content"></svg>
+                    </div>
+                    -->
+                </div>
+            </div>
+            <div class="right" id="filters-panel">
+                <div class="filters-panel-container">
+                    <div id="symb-filters">
+                        <div class="title">Symbolic Tree Filters</div>
+                        <div class="content">
+                        </div>
+                    </div>
+                    <div id="limit-filters">
+                        <div class="content">
+                            <div>
+                                <span style="display: block; width: 50%;">Limit time (s)</span>
+                                <input id="time-limit" type="number">
+                            </div>
+                            <div>
+                                <span style="display: block; width: 50%;">Limit memory (MB)</span>
+                                <input id="memory-limit" type="number">
+                            </div>
+                            <div style="text-align: center; display: flex; justify-content: space-evenly">
+                                <button id="continue-limit">Continue Exploration</button>
+                                <button id="new-limit">New Exploration</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="data-filters">
+                        <div class="title">Data Filters</div>
+                        <div class="content"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <script type="text/javascript" src="js/vendor/d3.v5.min.js"></script>
+        <script type="text/javascript" src="js/vendor/d3-selection-multi.v1.min.js"></script>
+        <script type="text/javascript" src="js/vendor/fontawesome-all.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery-3.3.1.min.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="js/dagre-d3.custom.js"></script>
+        <script type="text/javascript" src="js/vendor/popper.min.js"></script>
+        <script type="text/javascript" src="js/vendor/tippy.min.js"></script>
+        <script type="text/javascript" src="js/vendor/parcoords.standalone.js"></script>
+        <script type="text/javascript" src="js/vendor/waves.min.js"></script>
+        <script type="text/javascript" src="js/vendor/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="/eel.js"></script>
+
+        <script type="text/javascript" src="js/utils.js"></script>
+        <script type="text/javascript" src="js/data.js"></script>
+        <script type="text/javascript" src="js/colors.js"></script>
+        <script type="text/javascript" src="js/state.js"></script>
+        <script type="text/javascript" src="js/api.js"></script>
+        <script type="text/javascript" src="js/cfg.js"></script>
+        <script type="text/javascript" src="js/tree.js"></script>
+        <script type="text/javascript" src="js/paths.js"></script>
+        <script type="text/javascript" src="js/filters.js"></script>
+        <script type="text/javascript" src="js/stats.js"></script>
+        <script type="text/javascript" src="js/layout.js"></script>
+        <script type="text/javascript" src="js/main.js"></script>
+    </body>
+</html>
