@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import eel
 import sys
 import angr
@@ -13,6 +14,10 @@ from utility.cfg_loader import compute_cfg
 from angr_wrapper import AngrWrapper
 from utility import util
 import IPython
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/"
+def fix_path(path):
+    return SCRIPT_DIR + path
 
 angr_logger = logging.getLogger("angr")
 angr_logger.setLevel(logging.ERROR)  # shut up
@@ -51,12 +56,16 @@ def main(options, args):
     global aw
 
     binary = args[0]
+    if not os.path.exists(binary):
+        print(binary, "does not exist")
+        exit(1)
+
     r2 = r2pipe.open(binary)
     if r2.cmdj("iIj")["pic"]:
         base = 0x400000
     else:
         base = None
-    compute_cfg(binary, "web/data/json_data/", base)
+    compute_cfg(binary, fix_path("web/data/json_data/"), base)
 
     p = angr.Project(binary, auto_load_libs=False)
     util.hook_all_models(p, models.network_models)
@@ -70,14 +79,14 @@ def main(options, args):
     else:
         state = None
 
-    aw = AngrWrapper(p, "web/data/json_data/cfg_atb.json", starting_state=state, concretize_addresses=True)
+    aw = AngrWrapper(p, fix_path("web/data/json_data/cfg_atb.json"), starting_state=state, concretize_addresses=True)
     aw.init_run()
-    aw.dump_symbtree("web/data/json_data/symbolic_tree.json")
-    aw.dump_leaves_info("web/data/json_data/leaves.json")
-    aw.dump_symbols("web/data/json_data/symbols.json")
-    aw.dump_coverage_loss("web/data/json_data/coverage_loss.json")
+    aw.dump_symbtree(fix_path("web/data/json_data/symbolic_tree.json"))
+    aw.dump_leaves_info(fix_path("web/data/json_data/leaves.json"))
+    aw.dump_symbols(fix_path("web/data/json_data/symbols.json"))
+    aw.dump_coverage_loss(fix_path("web/data/json_data/coverage_loss.json"))
 
-    eel.init('web', allowed_extensions=['.js', '.html'])
+    eel.init(fix_path('web'), allowed_extensions=['.js', '.html'])
     web_app_options = {
         'mode': "chrome-app",
         'port': 8000,
@@ -88,6 +97,11 @@ def main(options, args):
     IPython.embed()
 
 if __name__=="__main__":
+    if not os.path.exists(fix_path("web/data")):
+        os.mkdir(fix_path("web/data"))
+    if not os.path.exists(fix_path("web/data/json_data")):
+        os.mkdir(fix_path("web/data/json_data"))
+
     parser = OptionParser(usage='usage: %prog binary [options]')
     parser.add_option("-a", "--start-address", dest="address", default=None,
                     help="(optional) start address. If not set, entrypoint")
