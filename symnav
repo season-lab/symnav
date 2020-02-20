@@ -43,8 +43,8 @@ def continue_exploration(filter_opts, cont_data):
 
     aw.apply_filters(filter_opts, True)
     aw.run(
-        10000, 
-        time_treshold=int(cont_data["time"]), 
+        10000,
+        time_treshold=int(cont_data["time"]),
         mem_treshold=int(cont_data["memory"])
     )
 
@@ -92,7 +92,7 @@ def main(options, args):
         'port': 8000,
         'chromeFlags': ["--aggressive-cache-discard"]
     }
-    eel.start('index.html', suppress_error=True, options=web_app_options) 
+    eel.start('index.html', suppress_error=True, options=web_app_options)
 
     IPython.embed()
 
@@ -103,10 +103,12 @@ if __name__=="__main__":
         os.mkdir(fix_path("web/data/json_data"))
 
     parser = OptionParser(usage='usage: %prog binary [options]')
-    parser.add_option("-a", "--start-address", dest="address", default=None,
-                    help="(optional) start address. If not set, entrypoint")
+    parser.add_option(
+        "-a", "--start-address", dest="address", default=None, type=int,
+        help="(optional) start address. If not set, entrypoint",
+    )
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     if len(args) != 1:
         parser.error("no input binary")
