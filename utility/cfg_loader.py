@@ -14,19 +14,19 @@ class R2CFGLoader(object):
         self.entry         = None
         self.cfg           = None
         self.addr_to_block = None
-    
+
     def process(self):
         if self.r2:
             return
-        
+
         if self.base:
             self.r2 = r2pipe.open(self.binary, flags=['-B %s' % hex(self.base)])
         else:
             self.r2 = r2pipe.open(self.binary)
-    
+
         self.r2.cmd("aaa")
         self.entry = self.r2.cmdj("iej")[0]["vaddr"]
-    
+
     def get_functions(self):
         if not self.r2:
             self.process()
@@ -42,7 +42,7 @@ class R2CFGLoader(object):
             name     = splitted[-1]
             self.functions[int(address, 16)] = name
         return self.functions
-    
+
     @staticmethod
     def remove_invalid_successors(blocks):
         for block_id in blocks:
@@ -53,13 +53,13 @@ class R2CFGLoader(object):
                 if successor_id in blocks:
                     new_successors.add(successor_addr)
             block.successors = new_successors
-    
+
     def get_function_cfg(self, address):
         if not self.r2:
             self.process()
         if not self.functions:
             self.get_functions()
-        
+
         self.r2.cmd("s %s" % hex(address))
         function_cfg = self.r2.cmdj("agj")
         if len(function_cfg) == 0:
@@ -129,7 +129,7 @@ class R2CFGLoader(object):
                                     )
                                 )
                 code_index += 1
-            
+
             f.blocks[b.get_id()] = b
 
         R2CFGLoader.remove_invalid_successors(f.blocks)
@@ -145,19 +145,19 @@ class R2CFGLoader(object):
                     callees[callee].add(f.address)
                 else:
                     callees[callee] = set([f.address])
-        
+
         for f_id in cfg.functions:
             f = cfg.functions[f_id]
             if f.address in callees:
                 f.callers = callees[f.address]
         return cfg
-    
+
     def get_cfg(self):
         if self.cfg:
             return self.cfg
         if not self.functions:
             self.get_functions()
-        
+
         cfg = CFG(
             self.entry,
             dict()
@@ -167,16 +167,16 @@ class R2CFGLoader(object):
             if f is None:
                 continue
             cfg.functions[address] = f
-        
+
         self.cfg = R2CFGLoader.resolve_callers(cfg)
         return self.cfg
-    
+
     def get_addr_to_block(self):
         if self.addr_to_block:
             return self.addr_to_block
         if not self.cfg:
             self.get_cfg()
-        
+
         addr_to_block = dict()
         for f_address in self.cfg.functions:
             f = self.cfg.functions[f_address]
@@ -188,20 +188,19 @@ class R2CFGLoader(object):
                         print("WARNING: collision")
                         continue
                     addr_to_block[insn_address] = block.get_id()
-        
+
         self.addr_to_block = addr_to_block
         return addr_to_block
 
 def compute_cfg(binary, dest_path, base=None):
-    name      = binary[binary.rfind("/"):]
-    dest_json = dest_path + "/cfg.json"
-    dest_dict = dest_path + "/cfg_atb.json" 
+    dest_json = os.path.join(dest_path, "cfg.json")
+    dest_dict = os.path.join(dest_path, "cfg_atb.json")
 
     cfg_loader = R2CFGLoader(binary, base)
     cfg = cfg_loader.get_cfg()
     with open(dest_json, "w") as out:
         out.write(cfg.to_json())
-    
+
     addr_to_block = cfg_loader.get_addr_to_block()
     with open(dest_dict, 'w') as json_file:
         json.dump(addr_to_block, json_file)
@@ -212,7 +211,7 @@ if __name__=="__main__":
     cfg = cfg_loader.get_cfg()
     with open("../data/graph.json", "w") as out:
         out.write(cfg.to_json())
-    
+
     addr_to_block = cfg_loader.get_addr_to_block()
     with open('../data/addr_to_block.json', 'w') as json_file:
         json.dump(addr_to_block, json_file)
