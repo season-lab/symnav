@@ -15,14 +15,14 @@ from angr_wrapper import AngrWrapper
 from utility import util
 import IPython
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/"
-def fix_path(path):
-    return SCRIPT_DIR + path
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+WEB_DIR = os.path.join(SCRIPT_DIR, "web")
+DATA_DIR = os.path.join(WEB_DIR, "data")
+JSON_DIR = os.path.join(DATA_DIR, "json_data")
 
-angr_logger = logging.getLogger("angr")
-angr_logger.setLevel(logging.ERROR)  # shut up
-cle_logger = logging.getLogger("cle")
-cle_logger.setLevel(logging.ERROR)   # shut up
+logging.getLogger("angr").setLevel(logging.ERROR)  # shut up
+logging.getLogger("cle").setLevel(logging.ERROR)   # shut up
+
 
 sys.setrecursionlimit(100000)
 
@@ -65,7 +65,7 @@ def main(options, args):
         base = 0x400000
     else:
         base = None
-    compute_cfg(binary, fix_path("web/data/json_data/"), base)
+    compute_cfg(binary, JSON_DIR, base)
 
     p = angr.Project(binary, auto_load_libs=False)
     util.hook_all_models(p, models.network_models)
@@ -79,14 +79,14 @@ def main(options, args):
     else:
         state = None
 
-    aw = AngrWrapper(p, fix_path("web/data/json_data/cfg_atb.json"), starting_state=state, concretize_addresses=True)
+    aw = AngrWrapper(p, os.path.join(JSON_DIR, "cfg_atb.json"), starting_state=state, concretize_addresses=True)
     aw.init_run()
-    aw.dump_symbtree(fix_path("web/data/json_data/symbolic_tree.json"))
-    aw.dump_leaves_info(fix_path("web/data/json_data/leaves.json"))
-    aw.dump_symbols(fix_path("web/data/json_data/symbols.json"))
-    aw.dump_coverage_loss(fix_path("web/data/json_data/coverage_loss.json"))
+    aw.dump_symbtree(os.path.join(JSON_DIR, "symbolic_tree.json"))
+    aw.dump_leaves_info(os.path.join(JSON_DIR, "leaves.json"))
+    aw.dump_symbols(os.path.join(JSON_DIR, "symbols.json"))
+    aw.dump_coverage_loss(os.path.join(JSON_DIR, "coverage_loss.json"))
 
-    eel.init(fix_path('web'), allowed_extensions=['.js', '.html'])
+    eel.init(WEB_DIR, allowed_extensions=['.js', '.html'])
     web_app_options = {
         'mode': "chrome-app",
         'port': 8000,
@@ -97,10 +97,10 @@ def main(options, args):
     IPython.embed()
 
 if __name__=="__main__":
-    if not os.path.exists(fix_path("web/data")):
-        os.mkdir(fix_path("web/data"))
-    if not os.path.exists(fix_path("web/data/json_data")):
-        os.mkdir(fix_path("web/data/json_data"))
+    if not os.path.exists(DATA_DIR):
+        os.mkdir(DATA_DIR)
+    if not os.path.exists(JSON_DIR):
+        os.mkdir(JSON_DIR)
 
     parser = OptionParser(usage='usage: %prog binary [options]')
     parser.add_option(
