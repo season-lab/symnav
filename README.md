@@ -7,6 +7,7 @@ SymNav is a prototype tool that visualizes the state of a symbolic execution ana
 With the help of the tool, the user can grasp properties of the ongoing analysis and use such insights to refine the symbolic exploration process.
 
 ### Installation
+Install `Chromium` and `radare2`. 
 Create a virtual environment and install the required pip packages. 
 Using [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/):
 ``` bash
