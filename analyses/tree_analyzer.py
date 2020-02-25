@@ -3,7 +3,7 @@ import json
 from angr.state_plugins.sim_action import SimActionConstraint
 from analyses.constrained_inputs import extract_indirect_inputs
 from analyses.symbtree_builder import LightweightState
-from utility.util import insert_or_add, combine_histograms, combine_histograms_max
+from utility.util import insert_or_add, combine_histograms, combine_histograms_max, check_weakref
 from functools import reduce
 from IPython import embed
 

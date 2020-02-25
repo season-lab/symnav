@@ -6,7 +6,7 @@ import weakref
 
 class LightweightState(object):
     def __init__(self, state):
-        self.id              = id(state.history)
+        self.id              = LightweightState.hash_from_state(state)
         self.address         = state.addr                       # current ip value
         self.constraints     = state.solver.constraints[:]      # list of constraints
         self.block_addresses = state.block().instruction_addrs  # addresses of the block
@@ -29,6 +29,14 @@ class LightweightState(object):
     
     def __repr__(self):
         return self.__str__()
+    
+    @staticmethod
+    def hash_from_state(state):
+        return id(state.history)
+    
+    @staticmethod
+    def hash_from_history(state_history):
+        return id(state_history)
 
 class SymbtreeBuilder(object):
     def __init__(self, path_addr_to_block, tree=None):
@@ -48,7 +56,7 @@ class SymbtreeBuilder(object):
         if father is None:
             father_id = self.first_state.id
         else:
-            father_id = id(father)
+            father_id = LightweightState.hash_from_history(father)
         assert self.tree.contains(father_id)
         
         lwState = LightweightState(state)

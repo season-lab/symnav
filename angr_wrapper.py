@@ -6,7 +6,9 @@ import pickle
 import claripy
 from analyses.tree_analyzer import TreeAnalyzer
 from analyses.tree_pruner import TreePruner
-from analyses.symbtree_builder import SymbtreeBuilder
+from analyses.symbtree_builder import (
+    SymbtreeBuilder, LightweightState
+)
 from collections import namedtuple
 from utility import util
 from IPython import embed
@@ -101,7 +103,7 @@ class AngrWrapper(object):
                 return 'avoid'
             if not state.history.parent:
                 return 'active'
-            parent_id = id(state.history.parent)
+            parent_id = LightweightState.hash_from_history(state.history.parent)
             parent = self.stb.tree.get_by_id(parent_id).data
             if (parent.address, state.addr) in avoid_edges:
                 print("avoid edge")
@@ -220,7 +222,7 @@ class AngrWrapper(object):
         symbol_expr = state.inspect.symbolic_expr
         address     = state.addr
         creation    = hex(address)
-        node_id     = id(state.history)
+        node_id     = LightweightState.hash_from_state(state)
         block_id    = self.find_cfg_block(state)
         category    = self.infer_category(address, symbol_name)
         if self.project.is_hooked(state.addr):
@@ -237,7 +239,8 @@ class AngrWrapper(object):
         self.tree_pruner.symb_tree   = new_tree
         self.symbols                 = filtered_symbols
         self.concretized_symb        = set(self.symbols.keys()).intersection(self.concretized_symb)
-        self.smgr.stashes['active'] = list()
+
+        tmp = list()
         for leaf in new_tree.leaves():
             if not leaf.data:
                 # empty tree
@@ -249,7 +252,8 @@ class AngrWrapper(object):
             strongref_state.add_constraints(*constraints)
             if strongref_state in self.smgr.avoid:
                 continue
-            self.smgr.stashes['active'].append(strongref_state)
+            tmp.append(strongref_state)
+        self.smgr.stashes['active'] = tmp
 
     @staticmethod
     def filter_symbols(symbols, tree):
